@@ -133,11 +133,15 @@ void draw() {
                 println("NODE AWAKE FLAG");
                 ((Switch) switches.get(i)).nodeAwake();
               }
-              else if (rx.getData()[0] == 3) { // MEASUREMENT Packet
+              else if (rx.getData()[0] == 3) { // MASTER Packet
+                println("NODE MASTER");              
+                masterRX(i, rx);
+              }
+              else if (rx.getData()[0] == 4) { // MEASUREMENT Packet
                 println("NODE MEASUREMENT");              
                 measurementRX(i, rx);
               }
-              else if (rx.getData()[0] == 4) { // DATA Packet
+              else if (rx.getData()[0] == 5) { // DATA Packet
                 println("NODE DATA " + millis());              
                 ((Switch) switches.get(i)).nodeData(rx);
               }
@@ -213,23 +217,51 @@ void draw() {
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void measurementRX(int i, ZNetRxResponse rx) {
-  ((Switch) switches.get(i)).co2L = rx.getData()[1] * 256 + rx.getData()[2];
-  ((Switch) switches.get(i)).ico2L = rx.getData()[3] * 256 + rx.getData()[4];            
-  ((Switch) switches.get(i)).temp = (rx.getData()[5] * 256 + rx.getData()[6])/16.0;
-  ((Switch) switches.get(i)).seqCount = rx.getData()[7] * 256 + rx.getData()[8];
-  ((Switch) switches.get(i)).seqPeriod = rx.getData()[9] * 256 + rx.getData()[10];
-  ((Switch) switches.get(i)).seqPos = rx.getData()[11] * 256 + rx.getData()[12];
-  ((Switch) switches.get(i)).seqLength = rx.getData()[13] * 256 + rx.getData()[14];
-  ((Switch) switches.get(i)).co2Max = rx.getData()[15] * 256 + rx.getData()[16];
-  ((Switch) switches.get(i)).co2seqMin = rx.getData()[17] * 256 + rx.getData()[18];
-  ((Switch) switches.get(i)).co2seqMax = rx.getData()[19] * 256 + rx.getData()[20];
-  ((Switch) switches.get(i)).tStatus = "";
+void masterRX(int i, ZNetRxResponse rx) {
+  ((Switch) switches.get(i)).type = 1;
+  ((Switch) switches.get(i)).seqCount = rx.getData()[1] * 256 + rx.getData()[2];
+  ((Switch) switches.get(i)).seqPeriod = rx.getData()[3] * 256 + rx.getData()[4];
+  ((Switch) switches.get(i)).seqPos = rx.getData()[5] * 256 + rx.getData()[6];
+  ((Switch) switches.get(i)).seqLength = rx.getData()[7] * 256 + rx.getData()[8];
   ((Switch) switches.get(i)).tUpdate = nf(day(),2) + "/" + nf(month(),2) + "/" + str(year()) + " " + nf(hour(),2) + ":" + nf(minute(),2) + ":" + nf(second(),2);
-  ((Switch) switches.get(i)).output = rx.getData()[21];
-  ((Switch) switches.get(i)).volts = (float) (rx.getData()[22] * 256 + rx.getData()[23])/1023*3.3*2;
-  ((Switch) switches.get(i)).vcc = (float) (rx.getData()[24] * 256 + rx.getData()[25])/1000;
-  ((Switch) switches.get(i)).memory = rx.getData()[26] * 256 + rx.getData()[27];
+  ((Switch) switches.get(i)).out[0] = rx.getData()[9];
+  ((Switch) switches.get(i)).out[1] = rx.getData()[10];
+  ((Switch) switches.get(i)).out[2] = rx.getData()[11];
+  ((Switch) switches.get(i)).outspd[0] = rx.getData()[12];
+  ((Switch) switches.get(i)).outspd[1] = rx.getData()[13];
+  ((Switch) switches.get(i)).outspd[2] = rx.getData()[14];
+  ((Switch) switches.get(i)).nFans = rx.getData()[15];
+  ((Switch) switches.get(i)).fanspd[0] = rx.getData()[16]*10;
+  ((Switch) switches.get(i)).fanspd[1] = rx.getData()[17]*10;
+  ((Switch) switches.get(i)).fanspd[2] = rx.getData()[18]*10;
+  ((Switch) switches.get(i)).fanspd[3] = rx.getData()[19]*10;
+  ((Switch) switches.get(i)).fanspd[4] = rx.getData()[20]*10;
+  ((Switch) switches.get(i)).fanspd[5] = rx.getData()[21]*10;
+  ((Switch) switches.get(i)).fanspd[6] = rx.getData()[22]*10;
+  ((Switch) switches.get(i)).fanspd[7] = rx.getData()[23]*10;
+  ((Switch) switches.get(i)).fanspd[8] = rx.getData()[24]*10;
+  ((Switch) switches.get(i)).fanspd[9] = rx.getData()[25]*10;
+  ((Switch) switches.get(i)).fanspd[10] = rx.getData()[26]*10;
+  ((Switch) switches.get(i)).fanspd[11] = rx.getData()[27]*10;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void measurementRX(int i, ZNetRxResponse rx) {
+  ((Switch) switches.get(i)).type = 2;
+  ((Switch) switches.get(i)).seqCount = rx.getData()[1] * 256 + rx.getData()[2];
+  ((Switch) switches.get(i)).seqPeriod = rx.getData()[3] * 256 + rx.getData()[4];
+  ((Switch) switches.get(i)).seqPos = rx.getData()[5] * 256 + rx.getData()[6];
+  ((Switch) switches.get(i)).seqLength = rx.getData()[7] * 256 + rx.getData()[8];
+  ((Switch) switches.get(i)).tUpdate = nf(day(),2) + "/" + nf(month(),2) + "/" + str(year()) + " " + nf(hour(),2) + ":" + nf(minute(),2) + ":" + nf(second(),2); 
+  ((Switch) switches.get(i)).co2L = rx.getData()[9] * 256 + rx.getData()[10];
+  ((Switch) switches.get(i)).ico2L = rx.getData()[11] * 256 + rx.getData()[12];            
+  ((Switch) switches.get(i)).co2Max = rx.getData()[13] * 256 + rx.getData()[14];
+  ((Switch) switches.get(i)).co2seqMin = rx.getData()[15] * 256 + rx.getData()[16];
+  ((Switch) switches.get(i)).co2seqMax = rx.getData()[17] * 256 + rx.getData()[18];
+  ((Switch) switches.get(i)).temp = (rx.getData()[19] * 256 + rx.getData()[20])/16.0;
+  ((Switch) switches.get(i)).volts = (float) (rx.getData()[21] * 256 + rx.getData()[22])/1023*3.3*2;
+  ((Switch) switches.get(i)).vcc = (float) (rx.getData()[23] * 256 + rx.getData()[24])/1000;
 }
 
 //------------------------------------------------------------------------------
@@ -238,25 +270,27 @@ void nodeInitialise() {
   if (allReady) {
     try {
       dStart = new Date();
-      dStart.setTime(dStart.getTime() + 15000); // Start in 15 secs
+      dStart.setTime(dStart.getTime() + 5000); // Start in 5 secs
       dSync = new Date();   
       println("Initialising!");
-      commandInt[0] = (int) 99;
-      commandInt[1] = (int) 99;
-      commandInt[2] = (int) 99;       
-      commandInt[3] = (int) (dSync.getTime()/1000) >> 24 & 0xff;
-      commandInt[4] = (int) (dSync.getTime()/1000) >> 16 & 0xff;
-      commandInt[5] = (int) (dSync.getTime()/1000) >> 8 & 0xff;
-      commandInt[6] = (int) (dSync.getTime()/1000) & 0xff;
-      commandInt[7] = (int) (dStart.getTime()/1000) >> 24 & 0xff;
-      commandInt[8] = (int) (dStart.getTime()/1000) >> 16 & 0xff;
-      commandInt[9] = (int) (dStart.getTime()/1000) >> 8 & 0xff;
-      commandInt[10] = (int) (dStart.getTime()/1000) & 0xff;
-      commandInt[11] = (int) 15 >> 8 & 0xff; // Sequence length
-      commandInt[12] = (int) 15 & 0xff;
-      commandInt[13] = (int) 60 >> 8 & 0xff; // Sequence Period in minutes
-      commandInt[14] = (int) 60 & 0xff;
-      commandInt[15] = (int) 8; // PRBS Multiple 
+      commandInt[0] = (int) 99;       
+      commandInt[1] = (int) (dSync.getTime()/1000) >> 24 & 0xff;
+      commandInt[2] = (int) (dSync.getTime()/1000) >> 16 & 0xff;
+      commandInt[3] = (int) (dSync.getTime()/1000) >> 8 & 0xff;
+      commandInt[4] = (int) (dSync.getTime()/1000) & 0xff;
+      commandInt[5] = (int) (dStart.getTime()/1000) >> 24 & 0xff;
+      commandInt[6] = (int) (dStart.getTime()/1000) >> 16 & 0xff;
+      commandInt[7] = (int) (dStart.getTime()/1000) >> 8 & 0xff;
+      commandInt[8] = (int) (dStart.getTime()/1000) & 0xff;
+      commandInt[9] = (int) 15 >> 8 & 0xff; // Sequence length
+      commandInt[10] = (int) 15 & 0xff;
+      commandInt[11] = (int) 120 >> 8 & 0xff; // Sequence Period in minutes
+      commandInt[12] = (int) 120 & 0xff;
+      commandInt[15] = (int) 16; // PRBS Multiple 
+      commandInt[16] = (int) 2; // nZones
+      commandInt[17] = (int) 100; // z1speed
+      commandInt[18] = (int) 60; // z2speed
+      commandInt[19] = (int) 0; // z3speed
       
       ZNetTxRequest requestInt = new ZNetTxRequest(broadcast64, commandInt);
       xbee.sendAsynchronous(requestInt);
@@ -324,9 +358,14 @@ void mButtons() {
 //------------------------------------------------------------------------------
 class Switch {
 
-  int switchNumber, co2L, ico2L, seqCount, seqPeriod, seqPos, seqLength, co2Max, co2seqMin, co2seqMax, output, state, memory;
+  int switchNumber, co2L, ico2L, seqCount, seqPeriod, seqPos, seqLength, co2Max, co2seqMin, co2seqMax;
   int butHeight, butWidth, posX, posY1, posY2, posY3, posYT;
-  boolean button1, button2, button3, download, reset, zero;
+  int state, type;
+  int [] out = new int[3];
+  int [] outspd = new int[3];
+  int [] fanspd= new int[12];
+  int nFans;
+  boolean download, reset, zero, spdUpdate;
   float temp, volts, vcc;
   XBeeAddress64 addr64;  // stores the raw address locally
   String tStatus="Starting..", tUpdate="--";
@@ -368,17 +407,28 @@ class Switch {
     textSize(10);
     text(tStatus, posX+butWidth/2, posY1 - 45);
     text(tUpdate, posX+butWidth/2, posY1 - 35);
-
-
-    text(co2L + "ppm (" + ico2L + "ppm)", posX + butWidth/2, posY1-20);
-    text(nf(temp,0,2) + "dC", posX + butWidth/2, posY1-11);
-    text(seqCount + "x" + seqPeriod + "min Seqs" + "   " + seqPos + "/" + seqLength + " Steps", posX + butWidth/2, posYT+15);
-    text("Max: " + co2Max + "ppm", posX + butWidth/2, posYT+24);
-    text("SeqMin: " + co2seqMin + "ppm", posX + butWidth/2, posYT+33);
-    text("SeqMax: " + co2seqMax + "ppm", posX + butWidth/2, posYT+42);
-    text("OUTPUT: " + output, posX + butWidth/2, posYT+60);
-    text("Batt: " + nf(volts,0,2) + "V Vcc: " + nf(vcc,0,2) +"V", posX + butWidth/2, posYT+78);
-    text("Memory: " + memory, posX + butWidth/2, posYT+87);
+    
+    if (type==1) {
+      text("Z1Spd", posX + butWidth/2, posY1 + butHeight/2 + 4);
+      text("Z2Spd", posX + butWidth/2, posY2 + butHeight/2 + 4);
+      text("Z3Spd", posX + butWidth/2, posY3 + butHeight/2 + 4);
+      text(seqCount + "x" + seqPeriod + "min Seqs" + "   " + seqPos + "/" + seqLength + " Steps", posX + butWidth/2, posYT+15);
+      text("Out: " + out[0] + " " + out[1] + " " + out[2], posX + butWidth/2, posYT+24);
+      text("OutSpd (rpm): " + outspd[0] + " " + outspd[0] + " " + outspd[0] + " ", posX + butWidth/2, posYT+33);
+      text("nFans: " + nFans, posX + butWidth/2, posYT+51);
+      for (int d_fan=0 ; d_fan < nFans ; d_fan=d_fan+1) {
+        text("Fan" + d_fan + ": " + fanspd[d_fan] + "rpm", posX + butWidth/2, posYT+51+d_fan*9);
+      }
+    }
+    else {
+      text(co2L + "ppm (" + ico2L + "ppm)", posX + butWidth/2, posY1-20);
+      text(nf(temp,0,2) + "dC", posX + butWidth/2, posY1-11);
+      text(seqCount + "x" + seqPeriod + "min Seqs" + "   " + seqPos + "/" + seqLength + " Steps", posX + butWidth/2, posYT+15);
+      text("Max: " + co2Max + "ppm", posX + butWidth/2, posYT+24);
+      text("SeqMin: " + co2seqMin + "ppm", posX + butWidth/2, posYT+33);
+      text("SeqMax: " + co2seqMax + "ppm", posX + butWidth/2, posYT+42);
+      text("Batt: " + nf(volts,0,2) + "V Vcc: " + nf(vcc,0,2) +"V", posX + butWidth/2, posYT+78);
+    }
   }
   
   //****************************************************
@@ -436,6 +486,22 @@ class Switch {
       catch (XBeeTimeoutException e) {println("XBee request timed out");}
       catch (Exception e) {println("unexpected error: " + e + e.getMessage());}
     }
+    if ((type==1) && (spdUpdate)) {
+      try {
+          tStatus=("Speed Update...");
+          command[0] = (int) 110;
+          command[1] = (int) outspd[0];
+          command[2] = (int) outspd[1];
+          command[3] = (int) outspd[2];
+          println("Sending Zero Command");
+          ZNetTxRequest request = 
+            new ZNetTxRequest(addr64, command);
+          xbee.sendAsynchronous(request);
+          zero=false;
+      }
+      catch (XBeeTimeoutException e) {println("XBee request timed out");}
+      catch (Exception e) {println("unexpected error: " + e + e.getMessage());}
+    }
   }
   //****************************************************
   void nodeData(ZNetRxResponse rx) {
@@ -456,28 +522,57 @@ class Switch {
   }
   //****************************************************
   void toggleState() {
-    // CHECK BUTTON 1
+    // CHECK BUTTON 1-
     if(mouseX >=posX && mouseY >= posY1 && 
+       mouseX <=posX+butWidth/2 && mouseY <= posY1+butHeight) 
+    {
+      println(nodeID + ": clicked Button 0-!");
+      outspd[0]=outspd[0]-1;
+      spdUpdate=true;
+    }
+    
+    // CHECK BUTTON 1+
+    if(mouseX >=posX+butWidth/2 && mouseY >= posY1 && 
        mouseX <=posX+butWidth && mouseY <= posY1+butHeight) 
     {
-      println(nodeID + ": clicked Button 1!");
-      download=true;
+      println(nodeID + ": clicked Button 0+!");
+      outspd[0]=outspd[0]+1;
+      spdUpdate=true;
     }
     
-    // CHECK BUTTON 2
+    // CHECK BUTTON 2-
     else if(mouseX >=posX && mouseY >= posY2 && 
+       mouseX <=posX+butWidth/2 && mouseY <= posY2+butHeight) 
+    {
+      println(nodeID + ": clicked Button 1-!");
+      outspd[1]=outspd[1]-1;
+      spdUpdate=true;
+    }
+    
+    // CHECK BUTTON 2+
+    else if(mouseX >=posX+butWidth/2 && mouseY >= posY2 && 
        mouseX <=posX+butWidth && mouseY <= posY2+butHeight) 
     {
-      println(nodeID + ": clicked Button 2!");
-      button2=true;      
+      println(nodeID + ": clicked Button 1+!");
+      outspd[1]=outspd[1]+1;   
+      spdUpdate=true;
     }
     
-    // CHECK BUTTON 3
+    // CHECK BUTTON 3-
     else if(mouseX >=posX && mouseY >= posY3 && 
+       mouseX <=posX+butWidth/2 && mouseY <= posY3+butHeight) 
+    {
+      println(nodeID + ": clicked Button 3-!");
+      outspd[2]=outspd[2]-1;
+      spdUpdate=true;
+    }
+     // CHECK BUTTON 3+
+    else if(mouseX >=posX+butWidth/2 && mouseY >= posY3 && 
        mouseX <=posX+butWidth && mouseY <= posY3+butHeight) 
     {
-      println(nodeID + ": clicked Button 3!");
-      button3=true;
+      println(nodeID + ": clicked Button 3+!");
+      outspd[2]=outspd[2]+1;
+      spdUpdate=true;
     }
   }
 }

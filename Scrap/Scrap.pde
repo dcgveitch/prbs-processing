@@ -367,7 +367,7 @@ void mButtons() {
 class Switch {
 
   int switchNumber, co2L, ico2L, seqCount, seqPeriod, seqPos, seqLength, co2Max, co2seqMin, co2seqMax;
-  int dispNumber, butHeight, butWidth, posX, posY1, posY2, posY3, posYT;
+  int butHeight, butWidth, posX, posY1, posY2, posY3, posYT;
   int state, type=0;
   int [] out = new int[3];
   int [] outspd = new int[3];
@@ -387,10 +387,9 @@ class Switch {
     addr64 = _addr64;
     switchNumber = _switchNumber;
     nodeID=_nodeID;
-    dispNumber=int(nodeID.substring(1));
     butHeight=50;
     butWidth=mButWidth-50;
-    posX = ((dispNumber) * (mButWidth+10)) - (mButWidth-25);
+    posX = ((switchNumber+1) * (mButWidth+10)) - (mButWidth-25);
     posY1 = mPosY + mButHeight + 115;
     posY2 = posY1 + butHeight + 10;
     posY3 = posY2 + butHeight + 10;

@@ -28,7 +28,6 @@ Date dStart;
 Date dSync;
 int sizeX=1200, sizeY=500, mButHeight=50, mButWidth=150, mPosX1=10, mPosX2, mPosX3, mPosX4, mPosY=10;
 long nodeDiscover=-30000;
-long nodeDownload=-60000;
 int nNodeDL=0;
 String downloadStamp;
 boolean mButton1, mButton2, allReady;
@@ -123,6 +122,12 @@ void draw() {
             if (address64.equals(((NodeDiscover) nodes.get(i)).getNodeAddress64())) {
               foundIt=1;
               println("Recognised address. FLAG: " + rx.getData()[0]);
+              
+              if (rx.getData()[0] == 0) { // MASTER NODE READY
+                println("MASTER NODE READY FLAG");
+                masterNRX(i, rx);
+                ((Switch) switches.get(i)).nodeReady();
+              }
               
               if (rx.getData()[0] == 1) { // NODE READY
                 println("NODE READY FLAG");              
@@ -245,9 +250,26 @@ void masterRX(int i, ZNetRxResponse rx) {
   ((Switch) switches.get(i)).fanspd[10] = rx.getData()[26]*10;
   ((Switch) switches.get(i)).fanspd[11] = rx.getData()[27]*10;
   ((Switch) switches.get(i)).volts = (float) (rx.getData()[28] * 256 + rx.getData()[29])/1023*3.3*2;
-  ((Switch) switches.get(i)).vcc = (float) (rx.getData()[30] * 256 + rx.getData()[31])/1000;
+  ((Switch) switches.get(i)).vcc = (float) (rx.getData()[30] * 256 + rx.getData()[31])/1000; 
+}
 
-  
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void masterNRX(int i, ZNetRxResponse rx) {
+  ((Switch) switches.get(i)).type = 1;
+  ((Switch) switches.get(i)).nFans = rx.getData()[1];
+  ((Switch) switches.get(i)).fanspd[0] = rx.getData()[2]*10;
+  ((Switch) switches.get(i)).fanspd[1] = rx.getData()[3]*10;
+  ((Switch) switches.get(i)).fanspd[2] = rx.getData()[4]*10;
+  ((Switch) switches.get(i)).fanspd[3] = rx.getData()[5]*10;
+  ((Switch) switches.get(i)).fanspd[4] = rx.getData()[6]*10;
+  ((Switch) switches.get(i)).fanspd[5] = rx.getData()[7]*10;
+  ((Switch) switches.get(i)).fanspd[6] = rx.getData()[8]*10;
+  ((Switch) switches.get(i)).fanspd[7] = rx.getData()[9]*10;
+  ((Switch) switches.get(i)).fanspd[8] = rx.getData()[10]*10;
+  ((Switch) switches.get(i)).fanspd[9] = rx.getData()[11]*10;
+  ((Switch) switches.get(i)).fanspd[10] = rx.getData()[12]*10;
+  ((Switch) switches.get(i)).fanspd[11] = rx.getData()[13]*10;
 }
 
 //------------------------------------------------------------------------------
@@ -378,6 +400,8 @@ class Switch {
   float temp, volts, vcc;
   XBeeAddress64 addr64;  // stores the raw address locally
   String tStatus="Starting..", tUpdate="--";
+  String downloadStamp="";
+  long nodeDownload=-60000;
   
   String nodeID;
 
@@ -452,7 +476,7 @@ class Switch {
      nNodeDL=0;
      for (int i=0; i<switches.size(); i++) if(((Switch) switches.get(i)).state == 2) nNodeDL=nNodeDL+1;
      println(nNodeDL);
-     if (nNodeDL<1){
+     if (nNodeDL<3){
       try {
           command[0] = (int) 103;
           println("Sending Data Request!");
@@ -523,15 +547,29 @@ class Switch {
      try {
        tStatus="DOWNLOADING...";
        if (millis()-nodeDownload>60000) {
-         downloadStamp=str(year()) + str(month()) + str(day()) + "_" + nf(hour(),2,0) + nf(minute(),2,0) + "_";
+         downloadStamp="";
+         int dataOut[] = rx.getProcessedPacketBytes();
+         for (int i=15; i<23; i++) {
+           println(char(dataOut[i]));
+           downloadStamp=downloadStamp + char(dataOut[i]);
+           println(downloadStamp);
+         }
+         downloadStamp=downloadStamp + "_";
+         File f = new File("/Users/davidveitch/Documents/Work/3_PhD/5_Working Calcs/Processing/" + downloadStamp + nodeID + ".csv");
+         if (f.exists()) {
+           f.delete();
+         }         
+         nodeDownload=millis();
        }
-       nodeDownload=millis();
-       writer = new BufferedWriter(new FileWriter("/Users/davidveitch/Documents/Work/3_PhD/5_Working Calcs/Processing/" + downloadStamp + nodeID + ".csv", true));
-       int dataOut[] = rx.getProcessedPacketBytes();
-       for (int i=15; i<(dataOut.length-1); i++) {
-         writer.write(dataOut[i]);
+       else { 
+         nodeDownload=millis();
+         writer = new BufferedWriter(new FileWriter("/Users/davidveitch/Documents/Work/3_PhD/5_Working Calcs/Processing/" + downloadStamp + nodeID + ".csv", true));
+         int dataOut[] = rx.getProcessedPacketBytes();
+         for (int i=15; i<(dataOut.length-1); i++) {
+           writer.write(dataOut[i]);
+         }
+         writer.close();
        }
-       writer.close();
      }
      catch (IOException e) {}
   }

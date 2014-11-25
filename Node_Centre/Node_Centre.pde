@@ -218,6 +218,9 @@ void draw() {
   for (int i =0; i<switches.size(); i++) {
     ((Switch) switches.get(i)).render();
   }
+  
+  
+  
 }
 
 //------------------------------------------------------------------------------
@@ -403,8 +406,10 @@ class Switch {
   String downloadStamp="";
   long nodeDownload=-60000;
   
+  int [] zeroV = new int[8];
+  int [] spanV = new int[8];
+  
   String nodeID;
-
 
   // initialize switch object:
   Switch(XBeeAddress64 _addr64, int _switchNumber, String _nodeID) { 
@@ -419,6 +424,20 @@ class Switch {
     posY2 = posY1 + butHeight + 10;
     posY3 = posY2 + butHeight + 10;
     posYT = posY3 + butHeight + 10;
+    zeroV[1]=31000;
+    zeroV[2]=30660;
+    zeroV[3]=31131;
+    zeroV[4]=30925;
+    zeroV[5]=31077;
+    zeroV[6]=30934;
+    zeroV[7]=31180;
+    spanV[1]=8192;
+    spanV[2]=7669;
+    spanV[3]=7655;
+    spanV[4]=8377;
+    spanV[5]=8038;
+    spanV[6]=8160;
+    spanV[7]=8201;    
   }
 
   String getNodeID() {
@@ -476,7 +495,7 @@ class Switch {
      nNodeDL=0;
      for (int i=0; i<switches.size(); i++) if(((Switch) switches.get(i)).state == 2) nNodeDL=nNodeDL+1;
      println(nNodeDL);
-     if (nNodeDL<3){
+     if (nNodeDL<2){
       try {
           command[0] = (int) 103;
           println("Sending Data Request!");
@@ -513,6 +532,10 @@ class Switch {
       try {
           tStatus=("ZEROING...");
           command[0] = (int) 102;
+          command[1] = (int) zeroV[dispNumber] >> 8 & 0xff;
+          command[2] = (int) zeroV[dispNumber] & 0xff;
+          command[3] = (int) spanV[dispNumber] >> 8 & 0xff;
+          command[4] = (int) spanV[dispNumber] & 0xff;
           println("Sending Zero Command");
           ZNetTxRequest request = 
             new ZNetTxRequest(addr64, command);
@@ -579,9 +602,14 @@ class Switch {
     if(mouseX >=posX && mouseY >= posY1 && 
        mouseX <=posX+butWidth/2 && mouseY <= posY1+butHeight) 
     {
-      println(nodeID + ": clicked Button 0-!");
-      outspdD[0]=outspdD[0]-10;
-      spdUpdate=true;
+      if(type==1) {
+        println(nodeID + ": clicked Button 0-!");
+        outspdD[0]=outspdD[0]-10;
+        spdUpdate=true;
+      }
+      else {
+        download=true;
+      }
     }
     
     // CHECK BUTTON 1+

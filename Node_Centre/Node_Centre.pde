@@ -26,7 +26,7 @@ int[] command = new int[10];
 int[] commandInt = new int[18];
 Date dStart;
 Date dSync;
-int sizeX=1200, sizeY=500, mButHeight=50, mButWidth=150, mPosX1=10, mPosX2, mPosX3, mPosX4, mPosY=10;
+int sizeX=1200, sizeY=500, mButHeight=50, mButWidth=150, mPosX1=10, mPosX2, mPosX3, mPosX4, mPosX5, mPosY=10;
 long nodeDiscover=-30000;
 int nNodeDL=0;
 String downloadStamp;
@@ -53,6 +53,7 @@ void setup() {
   mPosX2= mPosX1 + mButWidth + 10;
   mPosX3= mPosX2 + mButWidth + 10;
   mPosX4= mPosX3 + mButWidth + 10;
+  mPosX5= mPosX4 + mButWidth + 10;
   
   smooth();
   font = loadFont("SansSerif-10.vlw");
@@ -87,6 +88,7 @@ void draw() {
   rect(mPosX2, mPosY, mButWidth, mButHeight);
   rect(mPosX3, mPosY, mButWidth, mButHeight);
   rect(mPosX4, mPosY, mButWidth, mButHeight);
+  rect(mPosX5, mPosY, mButWidth, mButHeight);
   stroke(5);
   line(0, mPosY + mButHeight + 10, sizeX, mPosY + mButHeight + 10);
   
@@ -97,6 +99,7 @@ void draw() {
   text("Download All", mPosX2 + mButWidth/2, mPosY + mButHeight/2 + 4);
   text("Reset All", mPosX3 + mButWidth/2, mPosY + mButHeight/2 + 4);
   text("Zero All", mPosX4 + mButWidth/2, mPosY + mButHeight/2 + 4);
+  text("Span All", mPosX5 + mButWidth/2, mPosY + mButHeight/2 + 4);
 
   if (error == 1) { // Report Serial Problems 
     fill(0);
@@ -210,9 +213,9 @@ void draw() {
   }
   
   allReady=true;
-  for (int i =0; i<switches.size(); i++) {
-    if(((Switch) switches.get(i)).state != 0) allReady=false;
-  }  
+//  for (int i =0; i<switches.size(); i++) {
+//    if(((Switch) switches.get(i)).state != 0) allReady=false;
+//  }  
   
   // draw the switches on the screen
   for (int i =0; i<switches.size(); i++) {
@@ -316,13 +319,13 @@ void nodeInitialise() {
       commandInt[8] = (int) (dStart.getTime()/1000) & 0xff;
       commandInt[9] = (int) 15 >> 8 & 0xff; // Sequence length
       commandInt[10] = (int) 15 & 0xff;
-      commandInt[11] = (int) 120 >> 8 & 0xff; // Sequence Period in minutes
-      commandInt[12] = (int) 120 & 0xff;
-      commandInt[13] = (int) 16; // PRBS Multiple 
+      commandInt[11] = (int) 360 >> 8 & 0xff; // Sequence Period in minutes
+      commandInt[12] = (int) 360 & 0xff;
+      commandInt[13] = (int) 48; // PRBS Multiple 
       commandInt[14] = (int) 2; // nZones
-      commandInt[15] = (int) 40; // z1speed
-      commandInt[16] = (int) 40; // z2speed
-      commandInt[17] = (int) 0; // z3speed
+      commandInt[15] = (int) 30; // z1speed
+      commandInt[16] = (int) 30; // z2speed
+      commandInt[17] = (int) 0; // Warmup flag (maxes fans and runs pumps continuously)
       
       ZNetTxRequest requestInt = new ZNetTxRequest(broadcast64, commandInt);
       xbee.sendAsynchronous(requestInt);
@@ -384,6 +387,15 @@ void mButtons() {
         ((Switch) switches.get(i)).zero=true;
       }
     }
+    
+    if(mouseX >=mPosX5 && mouseY >= mPosY && 
+       mouseX <=mPosX5+mButWidth && mouseY <= mPosY+mButHeight) 
+    {
+      println("Clicked Master Button 5!");
+      for (int i =0; i<switches.size(); i++) {
+        ((Switch) switches.get(i)).span=true;
+      }
+    }
 }
 
 
@@ -399,7 +411,7 @@ class Switch {
   int [] outspdD = new int[3];
   int [] fanspd= new int[12];
   int nFans;
-  boolean download, reset, zero, spdUpdate;
+  boolean download, reset, zero, span, spdUpdate;
   float temp, volts, vcc;
   XBeeAddress64 addr64;  // stores the raw address locally
   String tStatus="Starting..", tUpdate="--";
@@ -424,20 +436,20 @@ class Switch {
     posY2 = posY1 + butHeight + 10;
     posY3 = posY2 + butHeight + 10;
     posYT = posY3 + butHeight + 10;
-    zeroV[1]=31000;
-    zeroV[2]=30660;
-    zeroV[3]=31131;
-    zeroV[4]=30925;
-    zeroV[5]=31077;
-    zeroV[6]=30934;
-    zeroV[7]=31180;
-    spanV[1]=8192;
-    spanV[2]=7669;
-    spanV[3]=7655;
-    spanV[4]=8377;
-    spanV[5]=8038;
-    spanV[6]=8160;
-    spanV[7]=8201;    
+    zeroV[1]=150;
+    zeroV[2]=160;
+    zeroV[3]=155;
+    zeroV[4]=142;
+    zeroV[5]=127;
+    zeroV[6]=135;
+    zeroV[7]=180;
+    spanV[1]=8192;    
+    spanV[2]=8007;
+    spanV[3]=7937;
+    spanV[4]=8465;
+    spanV[5]=8373;
+    spanV[6]=8149;
+    spanV[7]=8158;
   }
 
   String getNodeID() {
@@ -532,15 +544,27 @@ class Switch {
       try {
           tStatus=("ZEROING...");
           command[0] = (int) 102;
-          command[1] = (int) zeroV[dispNumber] >> 8 & 0xff;
-          command[2] = (int) zeroV[dispNumber] & 0xff;
-          command[3] = (int) spanV[dispNumber] >> 8 & 0xff;
-          command[4] = (int) spanV[dispNumber] & 0xff;
+          command[1] = (int) zeroV[dispNumber] & 0xff;
           println("Sending Zero Command");
           ZNetTxRequest request = 
             new ZNetTxRequest(addr64, command);
           xbee.sendAsynchronous(request);
           zero=false;
+      }
+      catch (XBeeTimeoutException e) {println("XBee request timed out");}
+      catch (Exception e) {println("unexpected error: " + e + e.getMessage());}
+    }
+    if (span) {
+      try {
+          tStatus=("SPANNING...");
+          command[0] = (int) 103;
+          command[1] = (int) spanV[dispNumber] >> 8 & 0xff;
+          command[2] = (int) spanV[dispNumber] & 0xff;
+          println("Sending Span Command");
+          ZNetTxRequest request = 
+            new ZNetTxRequest(addr64, command);
+          xbee.sendAsynchronous(request);
+          span=false;
       }
       catch (XBeeTimeoutException e) {println("XBee request timed out");}
       catch (Exception e) {println("unexpected error: " + e + e.getMessage());}
@@ -616,9 +640,14 @@ class Switch {
     if(mouseX >=posX+butWidth/2 && mouseY >= posY1 && 
        mouseX <=posX+butWidth && mouseY <= posY1+butHeight) 
     {
-      println(nodeID + ": clicked Button 0+!");
-      outspdD[0]=outspdD[0]+10;
-      spdUpdate=true;
+      if(type==1) {
+        println(nodeID + ": clicked Button 0+!");
+        outspdD[0]=outspdD[0]+10;
+        spdUpdate=true;
+      }
+      else {
+        reset=true;
+      }
     }
     
     // CHECK BUTTON 2-

@@ -437,12 +437,12 @@ class Switch {
     posY3 = posY2 + butHeight + 10;
     posYT = posY3 + butHeight + 10;
     zeroV[1]=150;
-    zeroV[2]=160;
-    zeroV[3]=155;
-    zeroV[4]=142;
-    zeroV[5]=127;
-    zeroV[6]=135;
-    zeroV[7]=180;
+    zeroV[2]=150;
+    zeroV[3]=150;
+    zeroV[4]=436;
+    zeroV[5]=150;
+    zeroV[6]=150;
+    zeroV[7]=150;
     spanV[1]=8192;    
     spanV[2]=8007;
     spanV[3]=7937;
@@ -489,6 +489,8 @@ class Switch {
     }
     else if (type==2) {
       text("Batt: " + nf(volts,0,2) + "V Vcc: " + nf(vcc,0,2) +"V", posX+butWidth/2, posY1 - 40);
+      text("DL       RT", posX + butWidth/2, posY1 + butHeight/2 + 4);
+      text("ZR       SP", posX + butWidth/2, posY2 + butHeight/2 + 4);
       text(co2L + "ppm (" + ico2L + "ppm)", posX + butWidth/2, posY1-20);
       text(nf(temp,0,2) + "dC", posX + butWidth/2, posY1-10);
       text(seqCount + "x" + seqPeriod + "min Seqs" + "   " + seqPos + "/" + seqLength + " Steps", posX + butWidth/2, posYT+15);
@@ -544,7 +546,8 @@ class Switch {
       try {
           tStatus=("ZEROING...");
           command[0] = (int) 102;
-          command[1] = (int) zeroV[dispNumber] & 0xff;
+          command[1] = (int) zeroV[dispNumber] >> 8 & 0xff;
+          command[2] = (int) zeroV[dispNumber] & 0xff;
           println("Sending Zero Command");
           ZNetTxRequest request = 
             new ZNetTxRequest(addr64, command);
@@ -654,18 +657,28 @@ class Switch {
     else if(mouseX >=posX && mouseY >= posY2 && 
        mouseX <=posX+butWidth/2 && mouseY <= posY2+butHeight) 
     {
-      println(nodeID + ": clicked Button 1-!");
-      outspdD[1]=outspdD[1]-10;
-      spdUpdate=true;
+      if(type==1) {
+        println(nodeID + ": clicked Button 1-!");
+        outspdD[1]=outspdD[1]-10;
+        spdUpdate=true;
+      }
+      else {
+        zero=true;
+      }
     }
     
     // CHECK BUTTON 2+
     else if(mouseX >=posX+butWidth/2 && mouseY >= posY2 && 
        mouseX <=posX+butWidth && mouseY <= posY2+butHeight) 
     {
-      println(nodeID + ": clicked Button 1+!");
-      outspdD[1]=outspdD[1]+10;   
-      spdUpdate=true;
+      if(type==1) {
+        println(nodeID + ": clicked Button 1+!");
+        outspdD[1]=outspdD[1]+10;   
+        spdUpdate=true;
+      }
+      else {
+        span=true;
+      }    
     }
     
     // CHECK BUTTON 3-

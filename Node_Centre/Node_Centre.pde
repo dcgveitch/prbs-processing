@@ -23,7 +23,7 @@ XBeeAddress64 broadcast64 = new XBeeAddress64(0x00,0x00,0x00,0x00,0x00,0x00,0xff
 int error=0, foundIt;
 
 int[] command = new int[10];
-int[] commandInt = new int[18];
+int[] commandInt = new int[20];
 Date dStart;
 Date dSync;
 int sizeX=1200, sizeY=500, mButHeight=50, mButWidth=150, mPosX1=10, mPosX2, mPosX3, mPosX4, mPosX5, mPosY=10;
@@ -242,21 +242,23 @@ void masterRX(int i, ZNetRxResponse rx) {
   ((Switch) switches.get(i)).outspd[0] = rx.getData()[12];
   ((Switch) switches.get(i)).outspd[1] = rx.getData()[13];
   ((Switch) switches.get(i)).outspd[2] = rx.getData()[14];
-  ((Switch) switches.get(i)).nFans = rx.getData()[15];
-  ((Switch) switches.get(i)).fanspd[0] = rx.getData()[16]*10;
-  ((Switch) switches.get(i)).fanspd[1] = rx.getData()[17]*10;
-  ((Switch) switches.get(i)).fanspd[2] = rx.getData()[18]*10;
-  ((Switch) switches.get(i)).fanspd[3] = rx.getData()[19]*10;
-  ((Switch) switches.get(i)).fanspd[4] = rx.getData()[20]*10;
-  ((Switch) switches.get(i)).fanspd[5] = rx.getData()[21]*10;
-  ((Switch) switches.get(i)).fanspd[6] = rx.getData()[22]*10;
-  ((Switch) switches.get(i)).fanspd[7] = rx.getData()[23]*10;
-  ((Switch) switches.get(i)).fanspd[8] = rx.getData()[24]*10;
-  ((Switch) switches.get(i)).fanspd[9] = rx.getData()[25]*10;
-  ((Switch) switches.get(i)).fanspd[10] = rx.getData()[26]*10;
-  ((Switch) switches.get(i)).fanspd[11] = rx.getData()[27]*10;
-  ((Switch) switches.get(i)).volts = (float) (rx.getData()[28] * 256 + rx.getData()[29])/1023*3.3*2;
-  ((Switch) switches.get(i)).vcc = (float) (rx.getData()[30] * 256 + rx.getData()[31])/1000; 
+  ((Switch) switches.get(i)).decayC[0] = rx.getData()[15];
+  ((Switch) switches.get(i)).decayC[1] = rx.getData()[16];
+  ((Switch) switches.get(i)).nFans = rx.getData()[17];
+  ((Switch) switches.get(i)).fanspd[0] = rx.getData()[18]*10;
+  ((Switch) switches.get(i)).fanspd[1] = rx.getData()[19]*10;
+  ((Switch) switches.get(i)).fanspd[2] = rx.getData()[20]*10;
+  ((Switch) switches.get(i)).fanspd[3] = rx.getData()[21]*10;
+  ((Switch) switches.get(i)).fanspd[4] = rx.getData()[22]*10;
+  ((Switch) switches.get(i)).fanspd[5] = rx.getData()[23]*10;
+  ((Switch) switches.get(i)).fanspd[6] = rx.getData()[24]*10;
+  ((Switch) switches.get(i)).fanspd[7] = rx.getData()[25]*10;
+  ((Switch) switches.get(i)).fanspd[8] = rx.getData()[26]*10;
+  ((Switch) switches.get(i)).fanspd[9] = rx.getData()[27]*10;
+  ((Switch) switches.get(i)).fanspd[10] = rx.getData()[28]*10;
+  ((Switch) switches.get(i)).fanspd[11] = rx.getData()[29]*10;
+  ((Switch) switches.get(i)).volts = (float) (rx.getData()[30] * 256 + rx.getData()[31])/1023*3.3*2;
+  ((Switch) switches.get(i)).vcc = (float) (rx.getData()[32] * 256 + rx.getData()[33])/1000; 
 }
 
 //------------------------------------------------------------------------------
@@ -319,13 +321,16 @@ void nodeInitialise() {
       commandInt[8] = (int) (dStart.getTime()/1000) & 0xff;
       commandInt[9] = (int) 15 >> 8 & 0xff; // Sequence length
       commandInt[10] = (int) 15 & 0xff;
-      commandInt[11] = (int) 360 >> 8 & 0xff; // Sequence Period in minutes
-      commandInt[12] = (int) 360 & 0xff;
-      commandInt[13] = (int) 48; // PRBS Multiple 
+      commandInt[11] = (int) 240 >> 8 & 0xff; // Sequence Period in minutes
+      commandInt[12] = (int) 240 & 0xff;
+      commandInt[13] = (int) 32; // PRBS Multiple 
       commandInt[14] = (int) 2; // nZones
-      commandInt[15] = (int) 30; // z1speed
-      commandInt[16] = (int) 30; // z2speed
+      commandInt[15] = (int) 20; // z1speed *30 for actual tests
+      commandInt[16] = (int) 20; // z2speed
       commandInt[17] = (int) 0; // Warmup flag (maxes fans and runs pumps continuously)
+      commandInt[18] = (int) 0; // Zone1 decay test flag
+      commandInt[19] = (int) 1; // Zone2 decay test flag
+      
       
       ZNetTxRequest requestInt = new ZNetTxRequest(broadcast64, commandInt);
       xbee.sendAsynchronous(requestInt);
@@ -408,6 +413,7 @@ class Switch {
   int state, type=0;
   int [] out = new int[3];
   int [] outspd = new int[3];
+  int [] decayC = new int[3];
   int [] outspdD = new int[3];
   int [] fanspd= new int[12];
   int nFans;
@@ -418,7 +424,8 @@ class Switch {
   String downloadStamp="";
   long nodeDownload=-60000;
   
-  int [] zeroV = new int[8];
+  int zeroVRef = 400;
+  int [] zeroV = new int[8]; 
   int [] spanV = new int[8];
   
   String nodeID;
@@ -436,20 +443,20 @@ class Switch {
     posY2 = posY1 + butHeight + 10;
     posY3 = posY2 + butHeight + 10;
     posYT = posY3 + butHeight + 10;
-    zeroV[1]=150;
-    zeroV[2]=150;
-    zeroV[3]=150;
-    zeroV[4]=436;
-    zeroV[5]=150;
-    zeroV[6]=150;
-    zeroV[7]=150;
+    zeroV[1]=400;
+    zeroV[2]=425;
+    zeroV[3]=426;
+    zeroV[4]=440;
+    zeroV[5]=463;
+    zeroV[6]=444;
+    zeroV[7]=474;
     spanV[1]=8192;    
-    spanV[2]=8007;
-    spanV[3]=7937;
-    spanV[4]=8465;
-    spanV[5]=8373;
-    spanV[6]=8149;
-    spanV[7]=8158;
+    spanV[2]=9614;
+    spanV[3]=9809;
+    spanV[4]=9980;
+    spanV[5]=9863;
+    spanV[6]=9880;
+    spanV[7]=9908;
   }
 
   String getNodeID() {
@@ -481,10 +488,11 @@ class Switch {
       text("-  Z3Spd  +", posX + butWidth/2, posY3 + butHeight/2 + 4);
       text(seqCount + "x" + seqPeriod + "min Seqs" + "   " + seqPos + "/" + seqLength + " Steps", posX + butWidth/2, posYT+15);
       text("Out: " + out[0] + " " + out[1] + " " + out[2], posX + butWidth/2, posYT+24);
-      text("OutSpd (rpm): " + outspd[0] + " " + outspd[1] + " " + outspd[2] + " ", posX + butWidth/2, posYT+33);
-      text("nFans: " + nFans, posX + butWidth/2, posYT+51);
+      text("OutSpd (rpm): " + outspd[0] + " " + outspd[1] + " " + outspd[2], posX + butWidth/2, posYT+33);
+      text("Decay Count: " + decayC[0] + " " + decayC[1], posX + butWidth/2, posYT+42);
+      text("nFans: " + nFans, posX + butWidth/2, posYT+60);
       for (int d_fan=0 ; d_fan < nFans ; d_fan=d_fan+1) {
-        text("Fan" + d_fan + ": " + fanspd[d_fan] + "rpm", posX + butWidth/2, posYT+60+d_fan*9);
+        text("Fan" + d_fan + ": " + fanspd[d_fan] + "rpm", posX + butWidth/2, posYT+69+d_fan*9);
       }
     }
     else if (type==2) {
@@ -548,6 +556,8 @@ class Switch {
           command[0] = (int) 102;
           command[1] = (int) zeroV[dispNumber] >> 8 & 0xff;
           command[2] = (int) zeroV[dispNumber] & 0xff;
+          command[3] = (int) zeroVRef >> 8 & 0xff;
+          command[4] = (int) zeroVRef & 0xff;
           println("Sending Zero Command");
           ZNetTxRequest request = 
             new ZNetTxRequest(addr64, command);

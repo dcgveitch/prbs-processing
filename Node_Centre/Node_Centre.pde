@@ -325,8 +325,8 @@ void nodeInitialise() {
       commandInt[12] = (int) 240 & 0xff;
       commandInt[13] = (int) 32; // PRBS Multiple 
       commandInt[14] = (int) 2; // nZones
-      commandInt[15] = (int) 20; // z1speed *30 for actual tests
-      commandInt[16] = (int) 20; // z2speed
+      commandInt[15] = (int) 150; // z1speed *30 for actual tests
+      commandInt[16] = (int) 150; // z2speed
       commandInt[17] = (int) 0; // Warmup flag (maxes fans and runs pumps continuously)
       commandInt[18] = (int) 0; // Zone1 decay test flag
       commandInt[19] = (int) 1; // Zone2 decay test flag

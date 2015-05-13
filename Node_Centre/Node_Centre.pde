@@ -319,12 +319,12 @@ void nodeInitialise() {
       commandInt[8] = (int) (dStart.getTime()/1000) & 0xff;
       commandInt[9] = (int) 15 >> 8 & 0xff; // Sequence length
       commandInt[10] = (int) 15 & 0xff;
-      commandInt[11] = (int) 360 >> 8 & 0xff; // Sequence Period in minutes
-      commandInt[12] = (int) 360 & 0xff;
-      commandInt[13] = (int) 48; // PRBS Multiple 
+      commandInt[11] = (int) 240 >> 8 & 0xff; // Sequence Period in minutes
+      commandInt[12] = (int) 240 & 0xff;
+      commandInt[13] = (int) 32; // PRBS Multiple 
       commandInt[14] = (int) 2; // nZones
-      commandInt[15] = (int) 30; // z1speed
-      commandInt[16] = (int) 30; // z2speed
+      commandInt[15] = (int) 15; // z1speed
+      commandInt[16] = (int) 15; // z2speed
       commandInt[17] = (int) 0; // Warmup flag (maxes fans and runs pumps continuously)
       
       ZNetTxRequest requestInt = new ZNetTxRequest(broadcast64, commandInt);
@@ -418,6 +418,7 @@ class Switch {
   String downloadStamp="";
   long nodeDownload=-60000;
   
+  int zeroVRef = 450;
   int [] zeroV = new int[8];
   int [] spanV = new int[8];
   
@@ -436,13 +437,13 @@ class Switch {
     posY2 = posY1 + butHeight + 10;
     posY3 = posY2 + butHeight + 10;
     posYT = posY3 + butHeight + 10;
-    zeroV[1]=150;
-    zeroV[2]=150;
-    zeroV[3]=150;
-    zeroV[4]=436;
-    zeroV[5]=150;
-    zeroV[6]=150;
-    zeroV[7]=150;
+    zeroV[1]=450;
+    zeroV[2]=475;
+    zeroV[3]=519;
+    zeroV[4]=505;
+    zeroV[5]=487;
+    zeroV[6]=410;
+    zeroV[7]=501;
     spanV[1]=8192;    
     spanV[2]=8007;
     spanV[3]=7937;
@@ -548,6 +549,8 @@ class Switch {
           command[0] = (int) 102;
           command[1] = (int) zeroV[dispNumber] >> 8 & 0xff;
           command[2] = (int) zeroV[dispNumber] & 0xff;
+          command[3] = (int) zeroVRef >> 8 & 0xff;
+          command[4] = (int) zeroVRef & 0xff;
           println("Sending Zero Command");
           ZNetTxRequest request = 
             new ZNetTxRequest(addr64, command);
